@@ -40,7 +40,7 @@ warehouse_management/
 ## DocTypes
 
 ### 1. Item (Product)
-- **Naming:** Set by user (item_code used as name)
+- **Naming:** By field (item_code used as name)
 - **Fields:** Item Name, Item Code (unique), Stock UOM, Disabled, Item Group, Description, Image, Barcode, Reorder Level, Allow Negative Stock, Valuation Method (read-only, "Moving Average"), Standard Rate
 
 ### 2. Warehouse (Tree DocType)
@@ -49,7 +49,7 @@ warehouse_management/
 - Group warehouses cannot hold stock. Leaf warehouses only.
 
 ### 3. Stock Entry (Submittable)
-- **Naming:** SE-.YYYY.-.#####
+- **Naming:** STE-.#####
 - **Types:** Receipt, Consume, Transfer
 - **Fields:** Stock Entry Type, Posting Date, Posting Time, From/To Warehouse, Items (child table), Total Amount (read-only), Remarks, Amended From
 - **Controller:** `before_save` calculates line amounts and total. `on_submit` creates Stock Ledger Entries. `on_cancel` creates reversal entries.
