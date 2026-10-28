@@ -1,0 +1,115 @@
+{
+ "actions": [],
+ "allow_bulk_edit": 1,
+ "allow_rename": 1,
+ "autoname": "autoincrement",
+ "creation": "2026-10-28 14:54:40.399419",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "item",
+  "warehouse",
+  "posting_date",
+  "posting_time",
+  "voucher_type",
+  "voucher_no",
+  "qty_change",
+  "rate",
+  "valuation_rate",
+  "stock_value",
+  "balance_qty",
+  "balance_value"
+ ],
+ "fields": [
+  {
+   "fieldname": "item",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Item",
+   "options": "Item",
+   "reqd": 1
+  },
+  {
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Warehouse",
+   "options": "Warehouse",
+   "reqd": 1
+  },
+  {
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Posting Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "posting_time",
+   "fieldtype": "Time",
+   "in_list_view": 1,
+   "label": "Posting Time",
+   "reqd": 1
+  },
+  {
+   "fieldname": "voucher_type",
+   "fieldtype": "Data",
+   "label": "Voucher Type",
+   "reqd": 1
+  },
+  {
+   "fieldname": "voucher_no",
+   "fieldtype": "Data",
+   "label": "Voucher No",
+   "reqd": 1
+  },
+  {
+   "fieldname": "qty_change",
+   "fieldtype": "Float",
+   "label": "Qty Change",
+   "reqd": 1
+  },
+  {
+   "fieldname": "rate",
+   "fieldtype": "Currency",
+   "label": "Rate",
+   "reqd": 1
+  },
+  {
+   "fieldname": "valuation_rate",
+   "fieldtype": "Currency",
+   "label": "Valuation Rate"
+  },
+  {
+   "fieldname": "stock_value",
+   "fieldtype": "Currency",
+   "label": "Stock Value"
+  },
+  {
+   "fieldname": "balance_qty",
+   "fieldtype": "Float",
+   "label": "Balance Qty"
+  },
+  {
+   "fieldname": "balance_value",
+   "fieldtype": "Currency",
+   "label": "Balance Value"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-10-28 14:57:00.642678",
+ "modified_by": "Administrator",
+ "module": "Warehouse Management",
+ "name": "WMS Stock Ledger Entry",
+ "naming_rule": "Autoincrement",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
