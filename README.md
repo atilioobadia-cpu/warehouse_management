@@ -1,33 +1,29 @@
-### Warehouse Management
+# Warehouse Management System
 
-Warehouse management for X Electronics
+A warehouse management system built with Frappe Framework for X Electronics.
 
-### Installation
+## Features
 
-You can install this app using the [bench](https://github.com/frappe/bench) CLI:
+- **Item Management** — Products with valuation method and standard rate
+- **Warehouse** — Tree-structured warehouses (Store, Transit, Scrap)
+- **Stock Entry** — Receipt, Consume, Transfer with moving average valuation
+- **Stock Ledger Entry** — Stateless ledger (balances computed on the fly)
+- **Reports** — Stock Ledger (movement per line), Stock Balance (consolidated balance)
+- **Tests** — 5 unit tests covering all stock operations
+
+## Tech Stack
+
+- Frappe Framework v16
+- MariaDB, Redis
+
+## Setup
 
 ```bash
-cd $PATH_TO_YOUR_BENCH
-bench get-app $URL_OF_THIS_REPO --branch N
-bench install-app warehouse_management
+bench new-site mysite.local
+bench --site mysite.local install-app warehouse_management
+bench --site mysite.local set-config developer_mode 1
 ```
 
-### Contributing
+## License
 
-This app uses `pre-commit` for code formatting and linting. Please [install pre-commit](https://pre-commit.com/#installation) and enable it for this repository:
-
-```bash
-cd apps/warehouse_management
-pre-commit install
-```
-
-Pre-commit is configured to use the following tools for checking and formatting your code:
-
-- ruff
-- eslint
-- prettier
-- pyupgrade
-
-### License
-
-mit
+MIT
