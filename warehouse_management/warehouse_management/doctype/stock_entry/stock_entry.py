@@ -45,7 +45,7 @@ class StockEntry(Document):
         return result.qty or 0, result.value or 0
 
     def _process_receipt(self, item):
-        warehouse = item.t_warehouse or item.target_warehouse
+        warehouse = getattr(item, 't_warehouse', None) or getattr(item, 'target_warehouse', None) or getattr(self, 'to_warehouse', None) or getattr(self, 'target_warehouse', None)
         if not warehouse:
             frappe.throw("Target Warehouse is required for Receipt")
 
@@ -68,11 +68,11 @@ class StockEntry(Document):
         sle.incoming_rate = item.rate
         sle.valuation_rate = new_rate
         sle.stock_value_difference = item.qty * item.rate
-        sle.stock_uom = item.stock_uom or "Nos"
+        sle.stock_uom = getattr(item, 'stock_uom', None) or "Nos"
         sle.insert(ignore_permissions=True)
 
     def _process_consume(self, item):
-        warehouse = item.s_warehouse or item.source_warehouse
+        warehouse = getattr(item, 's_warehouse', None) or getattr(item, 'source_warehouse', None) or getattr(self, 'from_warehouse', None) or getattr(self, 'source_warehouse', None)
         if not warehouse:
             frappe.throw("Source Warehouse is required for Consume")
 
@@ -99,12 +99,12 @@ class StockEntry(Document):
         sle.incoming_rate = 0
         sle.valuation_rate = new_rate
         sle.stock_value_difference = -(item.qty * consume_rate)
-        sle.stock_uom = item.stock_uom or "Nos"
+        sle.stock_uom = getattr(item, 'stock_uom', None) or "Nos"
         sle.insert(ignore_permissions=True)
 
     def _process_transfer(self, item):
-        source = item.s_warehouse or item.source_warehouse
-        target = item.t_warehouse or item.target_warehouse
+        source = getattr(item, 's_warehouse', None) or getattr(item, 'source_warehouse', None) or getattr(self, 'from_warehouse', None) or getattr(self, 'source_warehouse', None)
+        target = getattr(item, 't_warehouse', None) or getattr(item, 'target_warehouse', None) or getattr(self, 'to_warehouse', None) or getattr(self, 'target_warehouse', None)
         if not source or not target:
             frappe.throw("Source and Target Warehouse are required for Transfer")
 
@@ -132,7 +132,7 @@ class StockEntry(Document):
         sle_out.incoming_rate = 0
         sle_out.valuation_rate = new_source_rate
         sle_out.stock_value_difference = -(item.qty * transfer_rate)
-        sle_out.stock_uom = item.stock_uom or "Nos"
+        sle_out.stock_uom = getattr(item, 'stock_uom', None) or "Nos"
         sle_out.insert(ignore_permissions=True)
 
         # In row (target) at transfer rate
@@ -155,11 +155,11 @@ class StockEntry(Document):
         sle_in.incoming_rate = transfer_rate
         sle_in.valuation_rate = new_target_rate
         sle_in.stock_value_difference = item.qty * transfer_rate
-        sle_in.stock_uom = item.stock_uom or "Nos"
+        sle_in.stock_uom = getattr(item, 'stock_uom', None) or "Nos"
         sle_in.insert(ignore_permissions=True)
 
     def _reverse_receipt(self, item):
-        warehouse = item.t_warehouse or item.target_warehouse
+        warehouse = getattr(item, 't_warehouse', None) or getattr(item, 'target_warehouse', None) or getattr(self, 'to_warehouse', None) or getattr(self, 'target_warehouse', None)
         current_qty, current_value = self._get_current_state(item.item, warehouse)
         new_qty = current_qty - item.qty
         new_value = current_value - (item.qty * item.rate)
@@ -179,11 +179,11 @@ class StockEntry(Document):
         sle.incoming_rate = 0
         sle.valuation_rate = new_rate
         sle.stock_value_difference = -(item.qty * item.rate)
-        sle.stock_uom = item.stock_uom or "Nos"
+        sle.stock_uom = getattr(item, 'stock_uom', None) or "Nos"
         sle.insert(ignore_permissions=True)
 
     def _reverse_consume(self, item):
-        warehouse = item.s_warehouse or item.source_warehouse
+        warehouse = getattr(item, 's_warehouse', None) or getattr(item, 'source_warehouse', None) or getattr(self, 'from_warehouse', None) or getattr(self, 'source_warehouse', None)
         current_qty, current_value = self._get_current_state(item.item, warehouse)
         consume_rate = current_value / current_qty if current_qty else item.rate
         new_qty = current_qty + item.qty
@@ -204,12 +204,12 @@ class StockEntry(Document):
         sle.incoming_rate = consume_rate
         sle.valuation_rate = new_rate
         sle.stock_value_difference = item.qty * consume_rate
-        sle.stock_uom = item.stock_uom or "Nos"
+        sle.stock_uom = getattr(item, 'stock_uom', None) or "Nos"
         sle.insert(ignore_permissions=True)
 
     def _reverse_transfer(self, item):
-        source = item.s_warehouse or item.source_warehouse
-        target = item.t_warehouse or item.target_warehouse
+        source = getattr(item, 's_warehouse', None) or getattr(item, 'source_warehouse', None) or getattr(self, 'from_warehouse', None) or getattr(self, 'source_warehouse', None)
+        target = getattr(item, 't_warehouse', None) or getattr(item, 'target_warehouse', None) or getattr(self, 'to_warehouse', None) or getattr(self, 'target_warehouse', None)
 
         # Reverse: add back to source
         current_qty, current_value = self._get_current_state(item.item, source)
@@ -237,7 +237,7 @@ class StockEntry(Document):
         sle_in.incoming_rate = transfer_rate
         sle_in.valuation_rate = new_source_rate
         sle_in.stock_value_difference = item.qty * transfer_rate
-        sle_in.stock_uom = item.stock_uom or "Nos"
+        sle_in.stock_uom = getattr(item, 'stock_uom', None) or "Nos"
         sle_in.insert(ignore_permissions=True)
 
         # Remove from target
@@ -260,5 +260,5 @@ class StockEntry(Document):
         sle_out.incoming_rate = 0
         sle_out.valuation_rate = new_target_rate
         sle_out.stock_value_difference = -(item.qty * transfer_rate)
-        sle_out.stock_uom = item.stock_uom or "Nos"
+        sle_out.stock_uom = getattr(item, 'stock_uom', None) or "Nos"
         sle_out.insert(ignore_permissions=True)
