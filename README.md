@@ -1,121 +1,80 @@
 # Warehouse Management System
 
-A warehouse management system built with Frappe Framework for X Electronics.
+A clean, minimal warehouse management module built on **Frappe Framework (v16)**. Designed for learning and practical stock tracking with accurate valuation using the **Moving Average** method.
 
-## Architecture Overview
+## Overview
 
-```
-warehouse_management/
-├── warehouse_management/
-│   ├── doctype/
-│   │   ├── item/                    # Product master
-│   │   │   ├── item.py              # (no custom logic)
-│   │   │   ├── item.json            # DocType definition
-│   │   │   └── item.js
-│   │   ├── warehouse/               # Tree-structured warehouse
-│   │   │   ├── warehouse.json
-│   │   │   └── warehouse_tree.js
-│   │   ├── stock_entry/             # Stock movements (submittable)
-│   │   │   ├── stock_entry.py       # Controller: moving average + SLE creation
-│   │   │   ├── stock_entry.json
-│   │   │   ├── stock_entry.js
-│   │   │   └── test_stock_entry.py  # 5 unit tests
-│   │   ├── stock_entry_detail/      # Child table (line items)
-│   │   │   ├── stock_entry_detail.json
-│   │   │   └── stock_entry_detail.py
-│   │   └── stock_ledger_entry/      # Stateless ledger
-│   │       ├── stock_ledger_entry.json
-│   │       └── stock_ledger_entry.py
-│   ├── report/
-│   │   ├── stock_ledger/            # Stock Ledger Report (Query Report)
-│   │   │   └── stock_ledger.json
-│   │   └── stock_balance/           # Stock Balance Report (Query Report)
-│   │       └── stock_balance.json
-│   └── __init__.py
-├── hooks.py
-├── modules.txt
-└── README.md
-```
+The Warehouse Management System handles basic stock transactions (Receipt, Consume, Transfer), maintains a stateless Stock Ledger, and provides real-time reports with running balances. All stock movements are tracked through an append-only ledger for full auditability.
+
+## Features
+
+- **Item Management** – Products with Item Code, Item Name, Item Group, Stock UOM, and Standard Rate
+- **Warehouse Management** – Hierarchical (Tree) Warehouses with support for parent-child structure
+- **Stock Entry** – Submittable document to record Receipts, Consumption, and Transfers
+- **Stock Ledger Entry (SLE)** – Immutable, system-generated ledger of all stock movements
+- **Moving Average Valuation** – Automatic recalculation of valuation rate on each transaction
+- **Reversal on Cancellation** – Cancelled entries create opposite ledger entries (no deletions)
+- **Stock Reports** – Stock Ledger and Stock Balance with running balances
+- **Clean UI** – Organized forms with sections, column breaks, and smart field defaults
 
 ## DocTypes
 
-### 1. Item (Product)
-- **Naming:** By field (item_code used as name)
-- **Fields:** Item Name, Item Code (unique), Stock UOM, Disabled, Item Group, Description, Image, Barcode, Reorder Level, Allow Negative Stock, Valuation Method (read-only, "Moving Average"), Standard Rate
+| DocType | Type | Description |
+| --- | --- | --- |
+| **Item** | Master | Product master with auto-generated Item Code (`ITEM-#####`). UOM options: `Pcs` (default), `Nos`, `Kg`, `Litre`, `Meter`. Item Group: `Raw Material`, `Finished Goods`, `Consumable`, `Sub Assemblies`, `Services`. |
+| **Warehouse** | Master (Tree) | Supports nested warehouses using parent-child hierarchy. |
+| **Stock Entry** | Transaction (Submittable) | Main stock transaction document with types `Receipt`, `Consume`, and `Transfer`. Auto-calculates totals. |
+| **Stock Entry Detail** | Child Table | Line items with Item, Qty (defaults to 1), Rate (auto-filled from Item Standard Rate), Amount, and Source/Target Warehouses. |
+| **Stock Ledger Entry** | Ledger (System Generated) | Append-only record of every stock movement. Never edited or deleted directly. |
 
-### 2. Warehouse (Tree DocType)
-- **is_tree = 1** (Frappe adds tree view + nested set behavior)
-- **Fields:** Warehouse Name, Is Group, Parent Warehouse, Warehouse Type, Disabled, lft, rgt, old_parent
-- Group warehouses cannot hold stock. Leaf warehouses only.
+## How It Works
 
-### 3. Stock Entry (Submittable)
-- **Naming:** STE-.#####
-- **Types:** Receipt, Consume, Transfer
-- **Fields:** Stock Entry Type, Posting Date, Posting Time, From/To Warehouse, Items (child table), Total Amount (read-only), Remarks, Amended From
-- **Controller:** `before_save` calculates line amounts and total. `on_submit` creates Stock Ledger Entries. `on_cancel` creates reversal entries.
+### Stock Entry Types
 
-### 4. Stock Entry Detail (Child Table)
-- **Fields:** Item, Item Name (fetch), Stock UOM (fetch), Qty, Basic Rate, Rate, Amount (read-only), Valuation Rate (read-only), Source Warehouse, Target Warehouse
-- `basic_rate` is auto-filled from moving average for Consume/Transfer
+| Type | Behavior | Warehouses |
+| --- | --- | --- |
+| **Receipt** | Increases stock | Target Warehouse (`To Warehouse`) |
+| **Consume** | Decreases stock (blocked if insufficient) | Source Warehouse (`From Warehouse`) |
+| **Transfer** | Moves stock between warehouses | Source & Target Warehouses (both required) |
 
-### 5. Stock Ledger Entry (Stateless)
-- **No stored running balance** — balances computed via SQL window functions
-- **Fields:** Item, Warehouse, Posting Date, Posting Time, Posting Datetime, Voucher Type, Voucher No, Voucher Detail No, Actual Qty (signed), Incoming Rate, Rate, Valuation Rate, Stock Value Difference, Stock UOM
-- `actual_qty` > 0 means stock in, < 0 means stock out
+### Moving Average Valuation
 
-## Moving Average Valuation
+Valuation is calculated dynamically from the ledger using the Moving Average method:
 
-```
-Receipt:  new_rate = (current_value + new_qty × new_rate) / (current_qty + new_qty)
-Consume:  consume_rate = current_value / current_qty
-          new_rate = (current_value - consumed_qty × consume_rate) / (current_qty - consumed_qty)
-Transfer: source rate used for both sides
-```
+- **Receipt:** `New Valuation Rate = (Current Value + (Qty × Rate)) / (Current Qty + Qty)`
+- **Consume:** `Consumption Rate = Current Value / Current Qty`. New rate recalculated after reduction.
+- **Transfer:** Stock moves at the source warehouse's current moving average rate. The target warehouse updates its own moving average with the transferred quantity at that rate.
 
-Implementation: `_get_current_state()` queries SUM(qty) and SUM(value) from ledger. Rate is frozen into each SLE row.
+### Cancellation
 
-## Cancellation (Reversal)
-
-Instead of deleting ledger entries, `on_cancel` creates **negated entries** (opposite qty and value). The ledger stays append-only and auditable.
+When a submitted Stock Entry is cancelled, the system creates **reversal entries** with opposite quantities and values. This keeps the Stock Ledger fully traceable and audit-safe.
 
 ## Reports
 
-### Stock Ledger (Query Report)
-- Columns: Item, Warehouse, Posting Datetime, Voucher Type, Voucher No, In Qty, Out Qty, Balance Qty (window function), Incoming Rate, Valuation Rate, Balance Value (window function)
-- Balance Qty = `SUM(actual_qty) OVER (PARTITION BY item, warehouse ORDER BY posting_datetime, name)`
+### Stock Ledger
+Displays all stock movements with full transaction history. Includes Item, Item Name, Warehouse, Posting Date, Posting Time, Voucher Type/No, In Qty, Out Qty, Running Balance Qty, Incoming Rate, Valuation Rate, and Running Balance Value. Balances are computed using SQL window functions.
 
-### Stock Balance (Query Report)
-- Columns: Item, Warehouse, Balance Qty, Valuation Rate, Balance Value
-- Consolidated: `GROUP BY item, warehouse HAVING SUM(qty) != 0`
-- Valuation Rate = latest SLE's valuation_rate
+### Stock Balance
+Shows current stock position by Item and Warehouse. Displays Balance Qty, Valuation Rate (latest), and Balance Value. Only shows warehouses with non-zero balances.
 
-## Tests (5 unit tests)
+## Validation Rules
 
-| Test | Description |
-|------|-------------|
-| Receipt creates ledger entry | Verifies SLE created with correct qty, rate, valuation, balance |
-| Consume reduces stock | Verifies balance decreases after consume |
-| Transfer moves stock | Verifies 2 SLEs created (source -qty, target +qty) |
-| Moving average valuation | Receipt 10@100 then 5@200 → avg = 133.33 |
-| Insufficient stock consume | Consume blocked when qty > available |
+- **Insufficient Stock** – Prevents Consume or Transfer if available quantity is lower than requested
+- **Warehouse Validation** – Enforces correct warehouse fields based on transaction type
+- **Mandatory Fields** – Validates required fields before submission
+- **System-Generated Ledger** – Stock Ledger Entries are created only on submission and cannot be manually created
 
-Run: `bench --site nvr.local run-tests --app warehouse_management`
-
-## Key Design Decisions
-
-1. **Stateless Ledger**: No stored running balance. Computed via SQL window functions.
-2. **Moving Average**: Single SQL query for current state. Rate frozen into each row.
-3. **Cancellation = Reversal**: Append-only ledger.
-4. **Shared `_get_current_state()`**: One method reused by all operations.
-5. **Validation**: Mandatory fields, warehouse type checks, insufficient stock prevention.
-
-## Setup
+## Installation
 
 ```bash
-bench new-site mysite.local
-bench --site mysite.local install-app warehouse_management
-bench --site mysite.local set-config developer_mode 1
+bench get-app https://github.com/atilioobadia-cpu/warehouse_management.git
+bench --site <your-site> install-app warehouse_management
+bench --site <your-site> migrate
 ```
+
+## GitHub Repository
+
+[https://github.com/atilioobadia-cpu/warehouse_management](https://github.com/atilioobadia-cpu/warehouse_management)
 
 ## License
 
