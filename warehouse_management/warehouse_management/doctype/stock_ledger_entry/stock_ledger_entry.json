@@ -63,14 +63,12 @@
    "fieldname": "voucher_type",
    "fieldtype": "Data",
    "label": "Voucher Type",
-   "reqd": 1,
    "options": "Stock Entry"
   },
   {
    "fieldname": "voucher_no",
    "fieldtype": "Data",
    "label": "Voucher No",
-   "reqd": 1,
    "options": "Stock Entry"
   },
   {
@@ -95,7 +93,6 @@
    "fieldname": "voucher_detail_no",
    "fieldtype": "Data",
    "label": "Voucher Detail No",
-   "reqd": 1,
    "options": "Stock Entry Detail"
   },
   {

@@ -137,6 +137,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
+ "search_fields": "item_name,item_code",
  "modified": "2026-10-28 17:32:05.031689",
  "modified_by": "Administrator",
  "module": "Warehouse Management",
