@@ -1,4 +1,5 @@
 name: CI
+# Frappe application checks are centralized in atilioobadia-cpu/dev-lab.
 
 on:
   push:
